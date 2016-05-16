@@ -21,6 +21,7 @@ $(shell mkdir -p lib)
 ifdef verbose
 AT 	:=
 else
+
 AT	:= @
 endif
 
@@ -56,8 +57,16 @@ sharedlib := $(libdir)/lib$(name).so
 #-----------------------------------------------------------------------
 # 	Define which compilers and linkers to use
 
-# 	C++ Compiler
-CXX	:= clang++
+# check for clang++, otherwise use g++
+COMPILER        := $(shell which clang++ >& $(HOME)/.cxx; tail $(HOME)/.cxx)
+COMPILER        := $(shell basename "$(COMPILER)")
+ifeq ($(COMPILER),clang++)
+CXX             := clang++
+LD              := clang++
+else
+CXX             := g++
+LD              := g++
+endif
 
 CINT    := rootcint
 
@@ -115,15 +124,14 @@ $(sharedlib)	: $(objects)
 	$(AT)$(LDSHARED) $(LDFLAGS) -fPIC $(objects) $(LIBS) -o $@
 
 $(objects)	: %.o	: %.cc
-	@echo ""
 	@echo "---> Compiling `basename $<`" 
 	$(AT)$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $< -o $@ >& $*.FAILED
 	$(AT)rm -rf $*.FAILED
 
 $(dictsrcs)	: $(srcdir)/%_dict.cc : $(incdir)/%.h
-	@echo ""
 	@echo "---> Building dictionary from `basename $^`" 
 	$(AT)$(CINT) -f $@ -c $^
+	$(AT)find $(srcdir) -name "*.pcm" -exec mv {} $(libdir) \;
 
 # 	Define clean up rules
 clean   :
