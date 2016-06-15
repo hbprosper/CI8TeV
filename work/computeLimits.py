@@ -37,7 +37,7 @@ def makePlot(ws, likelihood, q,
              lstyle=1,
              lwidth=2,
              ymin=0.0,
-             ymax=0.3):
+             ymax=0.08):
 
     xmin   = q.getMin()
     xmax   = q.getMax()
@@ -153,7 +153,8 @@ def main():
     model = ws.pdf('model')
     Nset  = ws.set('Nset')
     poi   = ws.var('lambda')
-
+    data  = toVector(ws, 'Nset')
+    
     print "="*80
     print "computing Bayesian interval"
     print "input filename: %s" % filename
@@ -166,15 +167,15 @@ def main():
     # --------------------------------------
     
     # create wrapper for model
-    pdf   = PDFWrapper(model, Nset, poi)
+    pdf = PDFWrapper(model, Nset, poi)
 
+    model.useBinRange(3)
+    #model.useAsimov(L, True)
+
+    
     CL = 0.95
-    model.setAsimov(True, L)
-    model.setBinRange(0)
-    ntrials = 5
-    step    = 100
-    for key in models:
-        
+    
+    for key in models:        
         for sign in [1, -1]:
             if sign > 0:
                 name = '%s_positive' % key
@@ -200,59 +201,28 @@ def main():
             # compute nominal limits
             # --------------------------------------
             try:
-                del hnom
+                del havg
             except:
                 pass
             
-            model.setSize()     # use full sample of likelihoods           
-            model.setNumber(0)  # use nominal cross section            
-            hnom = makePlot(ws, model, poi, "hnom", color=kBlue,lstyle=2)
-            swatch = TStopwatch()
-            swatch.Start()
-            model.setNumber(0)
-            bayes = Bayes(pdf, poi.getMin(), poi.getMax())        
-            limit = bayes.quantile(CL)
-            if limit > 0:
-                Limit1= 1.0/sqrt(limit)
-            else:
-                Limit1=-1.0
-            print "\tLambda > %8.1f TeV @ %3.1f%s CL (stats. only)" % \
-              (Limit1, 100*CL, '%')
+            # --------------------------------------
+            # compute limits
+            # --------------------------------------
+            model.initialize()
+            
+            havg = makePlot(ws, model, poi,"havg",color=kRed,
+                            lstyle=1,
+                            lwidth=2)
             clike.cd()
-            hnom.Draw('l')
+            havg.Draw('l same')            
             clike.Update()
-
-            # --------------------------------------
-            # compute nominal limits
-            # --------------------------------------
-            model.setNumber(-1) # include systematic uncertainties            
-            Limit2 = []
-            try:
-                for h in havg:
-                    del h
-            except:
-                pass
-            havg = [None]*ntrials
-            colors = [kBlue, kGreen, kOrange+1, kMagenta, kRed]
-            for iii in xrange(ntrials):
-                size = (iii+1)*step
-                model.setSize(size)
-                lwidth = 1
-                if iii == ntrials-1: lwidth=3
-                havg[iii]=makePlot(ws, model, poi, "havg%3.3d" % iii,
-                                   color=colors[iii],
-                                   lstyle=1,
-                                   lwidth=lwidth)
-                clike.cd()
-                havg[iii].Draw('l same')            
-                clike.Update()
-                bayes.normalize()
-                limit= bayes.quantile(CL)
-                if limit > 0:
-                    Limit2.append(1.0/sqrt(limit))
-                    print "\tLambda > %8.1f TeV @ %3.1f%s CL (all uncert.)" % \
-                    (Limit2[-1], 100*CL, '%'), size
-                    print "\t\t\t==> real time: %8.3f s " % swatch.RealTime()
+            bayes.normalize()
+            limit= bayes.quantile(CL)
+            if limit > 0:
+                Limit2 = 1.0/sqrt(limit)
+                print "\tLambda > %8.1f TeV @ %3.1f%s CL (all uncert.)" % \
+                (Limit2, 100*CL, '%')
+                print "\t\t\t==> real time: %8.3f s " % swatch.RealTime()
             # --------------------------------------
             # plot posterior density and limits
             # --------------------------------------
@@ -262,16 +232,14 @@ def main():
                               (energy, lumi),
                               0.035)
             scribe.vspace()
-            for iii in xrange(ntrials):
-                size = (iii+1)*step
-                scribe.write("%s(#kappa=%s) #Lambda > %3.1fTeV (%d)" % \
-                            (key, kappa, Limit2[iii], size), 0.04)
+            scribe.write("%s(#kappa=%s) #Lambda > %3.1fTeV" % \
+                         (key, kappa, Limit2), 0.04)
                             
             clike.Update()
             clike.SaveAs('.pdf')
             
         sleep(5)
-    #gApplication.Run()
+    gApplication.Run()
 #----------------------------------------------------------------------
 try:
     main()

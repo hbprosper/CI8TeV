@@ -10,14 +10,9 @@ from histutil import *
 from string import *
 from array import array
 from time import sleep
-from ROOT import gSystem, gPad, \
-     kFALSE, kTRUE, \
-     kBlack, kYellow, kGreen, kRed, kBlue, kOrange, kMagenta, \
-     TFile, TCanvas, TGraph, \
-     vector
+from ROOT import *
 #-----------------------------------------------------------------------------
 gSystem.Load("libCI.so")
-from ROOT import hutil
     
 LHAPATH = os.environ['LHAPDF_DATA_PATH']
 YMIN    = 1.0e-10
@@ -289,12 +284,12 @@ def makePlot(context):
     for ii, h in enumerate(hist):
         h.Divide(hqcdnom)
         pc.add(h)
-        if ii % 10 == 0:
+        if ii % 1000 == 0:
             jj += 1
             cratio.cd()
             h.SetLineWidth(1)
             h.SetLineColor(color[jj%5])
-            h.Draw('c same')
+            h.Draw('c')
             cratio.Update()
     #gApplication.Run()
     

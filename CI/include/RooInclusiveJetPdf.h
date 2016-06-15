@@ -43,26 +43,19 @@ public:
   QCDSpectrum* QCD(int c);
 
   CISpectrum*  CI(int c);
-
-  void setBinRange(int first=-1, int last=-1);
   
-  size_t size() { return maxsize; }
-  void setSize(int n=-1)
-  {
-    int mxsize = qcd.size()-1;
-    maxsize = n < 1 ? mxsize : n < mxsize ? n : mxsize;
-  }
-  void setNumber(int which=0);
-  void setAsimov(bool yes=true, double lumi=19.71, double l=0);
-  void setInterpolate(bool yes=true);
+  size_t size() { return qcd.size(); }
+
+  void useBinRange(int first=-1, int last=-1);
+  void useNumber(int which=0);
+  void useAsimov(double lumi, bool yes=true, double l=0);
+  
+  void initialize();
   
   std::vector<double>& Asimov() { return asimov; }
   std::vector<double>& crossSection(int n);
   std::vector<double>& qcdXsection() { return qcdxsect; }
-  
-  static long double multinomial(std::vector<double>& n,
-				 std::vector<double>& p);
-		    
+  		    
  protected:
   double evaluate() const;
 
@@ -76,17 +69,20 @@ public:
   std::vector<CISpectrum>  ci;
  
   double smallest;
+  double offset;
   int number;
   bool useasimov;
   std::vector<double> asimov;
   std::vector<double> qcdxsect;
   std::vector<double> xsection;
+  std::vector<double> data;
+  std::vector<double> lngammadata;
+  double lngammadatatotal;
   int firstbin;
   int lastbin;
-  int maxsize;
   bool useinterpolation;
   mutable ROOT::Math::Interpolator* interp;
-  
+
   ClassDef(RooInclusiveJetPdf,1)  
 };
 //---------------------------------------------------------------------------

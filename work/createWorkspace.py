@@ -15,8 +15,7 @@ from glob import glob
 from array import array
 from time import sleep
 from random import shuffle, randint
-from ROOT import gSystem, TFile, kFALSE, kTRUE, \
-     RooWorkspace, RooMsgService, RooFit, RooDataSet, RooCmdArg
+from ROOT import *
 #-----------------------------------------------------------------------------
 LHAPATH = os.environ['LHAPDF_DATA_PATH']
 DATAFILE= '../data/data_8TeV_L19.71_V8.root'
@@ -30,7 +29,7 @@ def decodeCommandLine():
     options
        -s<smearing>  jes+jer+pdf, jes+jer, pdf [def.=jes+jer+pdf]
        -o<root-filename>                       [def.=<PDF>_<s>_workspace.root]
-       -n<number of spectra>                   [def.=1000]
+       -n<number of spectra>                   [def.=10000]
 
     Notes:
        -n this is the number of spectra to use in bootstrap integration.
@@ -55,7 +54,7 @@ def decodeCommandLine():
                       action='store',
                       dest='nspectra',
                       type='int',
-                      default=100,
+                      default=10000,
                       help='number of randomly sampled spectra to use'\
                       ' MC bootstrap integration ')    
             
@@ -167,19 +166,20 @@ def main():
 
     print "="*80
     print "==> number of spectra: %d" % len(spectra)
-    print "==> first spectrum:      ", spectra[0]
-    print "==> last  spectrum:      ", spectra[-1]
+    print "==> first spectrum:", spectra[0]
+    print "==> last  spectrum:", spectra[-1]
     print "="*80
     
     # --------------------------------------
     # create RooFit workspace
     # --------------------------------------
     print "==> create workspace..."
-    RooWorkspace.autoImportClassCode(kFALSE)
-    RooWorkspace.addClassDeclImportDir('../CI')
-    RooWorkspace.addClassImplImportDir('../CI')
-    
+
     ws = RooWorkspace("CI")
+
+    #RooWorkspace.autoImportClassCode(kTRUE)
+    #RooWorkspace.addClassDeclImportDir('../CI')
+    #RooWorkspace.addClassImplImportDir('../CI')
 
     # Suppress info messages
     RooMsgService.instance().setGlobalKillBelow(RooFit.WARNING)    
@@ -267,8 +267,9 @@ def main():
 
         # also add spectra to probability model
         model.add(qcdspectrum[-1], cispectrum[-1])
-
+        
     getattr(ws, 'import')(model, RooCmdArg())
+
     # -------------------------------------                
     print "="*80    
     ws.Print()
